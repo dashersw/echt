@@ -1,20 +1,26 @@
-import type { Request, Response, NextFunction } from 'express'
+import type { NextFunction, Request, Response } from 'express'
 import { z } from 'zod'
 
 export type ValidationSchema = {
   body?: z.ZodType
   headers?: z.ZodType
   query?: z.ZodType
+  params?: z.ZodType
 }
 
 type InferSchemaType<T extends ValidationSchema> = {
   body: T['body'] extends z.ZodType ? z.infer<T['body']> : unknown
   headers: T['headers'] extends z.ZodType ? z.infer<T['headers']> : unknown
   query: T['query'] extends z.ZodType ? z.infer<T['query']> : unknown
+  params: T['params'] extends z.ZodType ? z.infer<T['params']> : unknown
 }
 
 export const validate = <T extends ValidationSchema>(schemas: T) => {
-  return (req: Request<unknown, unknown, InferSchemaType<T>['body']>, res: Response, next: NextFunction) => {
+  return (
+    req: Request<InferSchemaType<T>['params'], unknown, InferSchemaType<T>['body']>,
+    res: Response,
+    next: NextFunction
+  ) => {
     try {
       // Validate headers if schema provided
       if (schemas.headers) {
@@ -49,6 +55,12 @@ export const validate = <T extends ValidationSchema>(schemas: T) => {
       if (schemas.query) {
         const result = schemas.query.parse(req.query)
         req.query = result
+      }
+
+      // Validate params if schema provided
+      if (schemas.params) {
+        const result = schemas.params.parse(req.params)
+        req.params = result
       }
 
       next()
