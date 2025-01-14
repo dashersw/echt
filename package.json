@@ -1,0 +1,66 @@
+{
+  "name": "echt",
+  "version": "1.0.0",
+  "description": "Lightweight, type-safe request validation middleware for Express using Zod",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "test:watch": "jest --watch",
+    "lint": "biome check .",
+    "lint:fix": "biome check --apply .",
+    "format": "biome format .",
+    "format:fix": "biome format --write .",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test && npm run lint",
+    "preversion": "npm run lint",
+    "version": "npm run format:fix && git add -A src",
+    "postversion": "git push && git push --tags"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dashersw/echt.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dashersw/echt/issues"
+  },
+  "homepage": "https://github.com/dashersw/echt#readme",
+  "keywords": [
+    "express",
+    "zod",
+    "validation",
+    "middleware",
+    "typescript",
+    "request-validation",
+    "schema-validation",
+    "type-safe"
+  ],
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.11",
+    "@types/node": "^20.10.5",
+    "@types/supertest": "^2.0.16",
+    "@biomejs/biome": "1.5.3",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "express": "^4.x",
+    "zod": "^3.x"
+  }
+}
