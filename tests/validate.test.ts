@@ -10,16 +10,16 @@ describe('validate middleware', () => {
   const schema = {
     body: z.object({
       name: z.string().min(3),
-      age: z.number().min(18),
+      age: z.number().min(18)
     }),
     headers: z.object({
       'api-key': z.string(),
       accept: z.string(),
-      'set-cookie': z.string(),
+      'set-cookie': z.string()
     }),
     query: z.object({
-      filter: z.string().optional(),
-    }),
+      filter: z.string().optional()
+    })
   }
 
   // Mock error handler middleware
@@ -47,20 +47,20 @@ describe('validate middleware', () => {
       .set('set-cookie', 'session=123; user=john')
       .send({
         name: 'John',
-        age: 25,
+        age: 25
       })
 
     expect(response.status).toBe(200)
     expect(response.body).toEqual({
       name: 'John',
-      age: 25,
+      age: 25
     })
   })
 
   it('should fail validation with invalid body', async () => {
     const response = await request(app).post('/test').set('api-key', 'test-key').send({
       name: 'Jo',
-      age: 15,
+      age: 15
     })
 
     expect(response.status).toBe(400)
@@ -70,7 +70,7 @@ describe('validate middleware', () => {
   it('should fail validation with missing headers', async () => {
     const response = await request(app).post('/test').send({
       name: 'John',
-      age: 25,
+      age: 25
     })
 
     expect(response.status).toBe(400)
@@ -85,7 +85,7 @@ describe('validate middleware', () => {
     const errorSchema = {
       body: z.object({}).transform(() => {
         throw new Error('Unexpected error')
-      }),
+      })
     }
 
     appWithError.post('/error', validate(errorSchema), (req, res) => {
@@ -114,8 +114,8 @@ describe('validate middleware', () => {
 
     const nullHeaderSchema = {
       headers: z.object({
-        'x-test': z.string().optional(),
-      }),
+        'x-test': z.string().optional()
+      })
     }
 
     appWithNullHeader.post('/null-header', validate(nullHeaderSchema), (req, res) => {
@@ -135,8 +135,8 @@ describe('params validation', () => {
   const paramsSchema: ValidationSchema = {
     params: z.object({
       id: z.coerce.number().min(1),
-      slug: z.string().min(3).optional(),
-    }),
+      slug: z.string().min(3).optional()
+    })
   }
 
   app.get('/users/:id', validate(paramsSchema), (req, res) => {
@@ -149,8 +149,8 @@ describe('params validation', () => {
     validate({
       params: z.object({
         slug: z.string().min(3),
-        id: z.coerce.number().positive(),
-      }),
+        id: z.coerce.number().positive()
+      })
     }),
     (req, res) => {
       res.json(req.params)
@@ -177,7 +177,7 @@ describe('params validation', () => {
     expect(response.status).toBe(200)
     expect(response.body).toEqual({
       slug: 'test-slug',
-      id: 123,
+      id: 123
     })
   })
 
