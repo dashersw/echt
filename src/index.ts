@@ -76,12 +76,12 @@ type BaseValidationSchema = {
   locals?: z.ZodType
 }
 
-type SimpleResponseValidationSchema = BaseValidationSchema & {
+export type SimpleResponseValidationSchema = BaseValidationSchema & {
   response: z.ZodType
   useResponse?: never
 }
 
-type TypedResponseValidationSchema = BaseValidationSchema & {
+export type TypedResponseValidationSchema = BaseValidationSchema & {
   useResponse: TypedResponse<Partial<Record<StatusCodes, z.ZodType>>>
   response?: never
 }
@@ -132,6 +132,7 @@ type ValidatedMiddleware<T extends ValidationSchema> = RequestHandler<
   InferSchemaType<T>['query'],
   InferSchemaType<T>['locals']
 > & {
+  schemas: T
   handler: RequestHandler<
     InferSchemaType<T>['params'],
     InferSchemaType<T>['response'],
@@ -142,13 +143,15 @@ type ValidatedMiddleware<T extends ValidationSchema> = RequestHandler<
   use: T extends TypedResponseValidationSchema
     ? <P extends (req: ValidatedRequest<T>, res: ValidatedResponse<T>, next: NextFunction) => void>(
         handler: P
-      ) => RequestHandler
+      ) => RequestHandler & { schemas: T }
     : never
 }
 
 export const validate = <T extends ValidationSchema>(
   schemas: T
-): T extends TypedResponseValidationSchema ? Omit<ValidatedMiddleware<T>, 'handler'> : ValidatedMiddleware<T> => {
+): T extends TypedResponseValidationSchema
+  ? Omit<ValidatedMiddleware<T>, 'handler' | 'schemas'>
+  : ValidatedMiddleware<T> => {
   const middleware = (req: ValidatedRequest<T>, res: ValidatedResponse<T>, next: NextFunction) => {
     const validationErrors: z.ZodError[] = []
 
@@ -337,9 +340,14 @@ export const validate = <T extends ValidationSchema>(
   }) as ValidatedMiddleware<T>
 
   return Object.assign(wrappedMiddleware, {
+    schemas,
     handler: wrappedMiddleware,
-    use: <P extends (req: ValidatedRequest<T>, res: ValidatedResponse<T>, next: NextFunction) => void>(handler: P) => {
-      return ((baseReq: Request, baseRes: Response, next: NextFunction) => {
+    use: <
+      P extends (req: ValidatedRequest<T>, res: ValidatedResponse<T>, next: NextFunction) => void,
+    >(
+      handler: P
+    ) => {
+      const handlerWrapper = ((baseReq: Request, baseRes: Response, next: NextFunction) => {
         const req = baseReq as ValidatedRequest<T>
         const res = baseRes as unknown as ValidatedResponse<T>
 
@@ -351,8 +359,12 @@ export const validate = <T extends ValidationSchema>(
           return handler(req, res, next)
         })
       }) as RequestHandler
-    }
+
+      return Object.assign(handlerWrapper, {
+        schemas,
+      })
+    },
   }) as unknown as T extends TypedResponseValidationSchema
-    ? Omit<ValidatedMiddleware<T>, 'handler'>
+    ? Omit<ValidatedMiddleware<T>, 'handler' | 'schemas'>
     : ValidatedMiddleware<T>
 }
