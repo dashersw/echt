@@ -12,6 +12,7 @@ Lightweight, type-safe request and response validation middleware for Express us
 - 🪶 **Lightweight**: Zero dependencies beyond Express and Zod
 - 🚀 **Zero Config**: Works out of the box with TypeScript and Express
 - 💪 **Robust Error Handling**: Automatic error responses for invalid requests
+- 📕 **OpenAPI Specification**: Automatically generate OpenAPI Specification
 
 Unlike other validation libraries, echt provides complete end-to-end type safety and built-in response validation while leveraging the full power of Zod's schema validation.
 
@@ -175,6 +176,17 @@ app.get(
 The `.use()` wrapper is required with `useResponse` because it sets up the proper type inference and validation for different status codes. Without it, the middleware won't be able to properly validate responses against their corresponding status code schemas.
 
 When using response validation, make sure to define schemas for all possible response status codes. The middleware will throw an error if you try to send a response with an undefined status code.
+
+## OpenAPI Specification
+
+echt automatically generates an OpenAPI Specification for your API. You can access the generated specification by calling `generateOpenApiSpec(app)`.
+
+```typescript
+const spec = generateOpenApiSpec(app)
+fs.writeFileSync('openapi-spec.json', JSON.stringify(spec, null, 2))
+```
+
+You can check the complete example of the generated OpenAPI Specification in the [examples/auto-generated-openapi-docs](examples/auto-generated-openapi-docs) directory.
 
 ## Troubleshooting
 
