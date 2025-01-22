@@ -368,3 +368,5 @@ export const validate = <T extends ValidationSchema>(
     ? Omit<ValidatedMiddleware<T>, 'handler' | 'schemas'>
     : ValidatedMiddleware<T>
 }
+
+export { generateOpenApiSpec } from './generate-openapi-spec'
