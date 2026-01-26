@@ -843,4 +843,60 @@ describe('validate middleware', () => {
     expect(errorHandler.mock.calls[0][0]).toBeInstanceOf(Error)
     expect(errorHandler.mock.calls[0][0].message).toBe('No schema defined for status code 200')
   })
+
+  it('should validate response with res.sendStatus()', async () => {
+    const responseApp = express()
+    responseApp.use(express.json())
+
+    // Note: sendStatus(204) sends "No Content" as the body text,
+    // so we need to accept a string, not undefined
+    const responseSchema = {
+      useResponse: {
+        204: z.string()
+      }
+    }
+
+    responseApp.delete(
+      '/resource',
+      validate(responseSchema).use((req, res) => {
+        res.sendStatus(204)
+      })
+    )
+
+    responseApp.use(errorHandler)
+
+    const response = await request(responseApp).delete('/resource')
+
+    expect(response.status).toBe(204)
+    expect(errorHandler).not.toHaveBeenCalled()
+  })
+
+  it('should throw error when sendStatus uses undefined status code', async () => {
+    const responseApp = express()
+    responseApp.use(express.json())
+
+    const responseSchema = {
+      useResponse: {
+        200: z.object({ message: z.string() })
+        // 204 is intentionally not defined
+      }
+    }
+
+    responseApp.delete(
+      '/resource',
+      validate(responseSchema).use((req, res) => {
+        // @ts-ignore - intentionally using undefined status code
+        res.sendStatus(204)
+      })
+    )
+
+    responseApp.use(errorHandler)
+
+    const response = await request(responseApp).delete('/resource')
+
+    expect(response.status).toBe(500)
+    expect(errorHandler).toHaveBeenCalledTimes(1)
+    expect(errorHandler.mock.calls[0][0]).toBeInstanceOf(Error)
+    expect(errorHandler.mock.calls[0][0].message).toBe('No schema defined for status code 204')
+  })
 })

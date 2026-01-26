@@ -290,9 +290,10 @@ export const validate = <T extends ValidationSchema>(
         res.status = ((code: StatusCodes) => createChainedResponse(code)) as ValidatedResponse<T>['status']
 
         res.json = ((body: unknown) => {
-          const schema = typedResponse[200]
+          const statusCode = res.statusCode as StatusCodes
+          const schema = typedResponse[statusCode]
           if (!schema) {
-            throw new Error('No schema defined for status code 200')
+            throw new Error(`No schema defined for status code ${statusCode}`)
           }
           const result = schema.parse(body)
           return originalJson(result)
@@ -303,9 +304,10 @@ export const validate = <T extends ValidationSchema>(
             body = JSON.parse(body as string)
           }
 
-          const schema = typedResponse[200]
+          const statusCode = res.statusCode as StatusCodes
+          const schema = typedResponse[statusCode]
           if (!schema) {
-            throw new Error('No schema defined for status code 200')
+            throw new Error(`No schema defined for status code ${statusCode}`)
           }
 
           const result = schema.parse(body)
