@@ -9,6 +9,11 @@
     "test": "jest",
     "test:coverage": "jest --coverage",
     "test:watch": "jest --watch",
+    "test:zod3": "npm install zod@3 --no-save && jest",
+    "test:zod4": "npm install zod@4 --no-save && jest",
+    "test:express4": "npm install express@4 --no-save && jest",
+    "test:express5": "npm install express@5 --no-save && jest",
+    "test:all-versions": "npm run test:zod3 && npm run test:zod4 && npm run test:express4 && npm run test:express5",
     "lint": "biome check .",
     "lint:fix": "biome check --apply .",
     "format": "biome format .",
@@ -45,8 +50,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.x",
-    "zod": "^3.x"
+    "express": "^4.x || ^5.x"
   },
   "devDependencies": {
     "@biomejs/biome": "1.5.3",
@@ -58,9 +62,10 @@
     "supertest": "^6.3.3",
     "ts-jest": "^29.1.1",
     "typescript": "^5.3.3",
+    "zod": "^3.24.1"
   },
   "peerDependencies": {
-    "express": "^4.x",
-    "zod": "^3.x"
+    "express": "^4.x || ^5.x",
+    "zod": "^3.0.0 || ^4.0.0"
   }
 }

@@ -599,7 +599,7 @@ describe('validate middleware', () => {
             lastLogin: z.string(),
           })
           .optional(),
-        preferences: z.record(z.string()).optional(),
+        preferences: z.record(z.string(), z.string()).optional(),
       }),
     }
 

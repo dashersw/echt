@@ -1,6 +1,11 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express'
 import { ZodError, type z } from 'zod'
 
+// Zod 4 defaults ZodType output to `unknown` (vs `any` in Zod 3), which breaks .parse() return types.
+// Explicitly using `any` here ensures consistent behavior across both versions.
+// biome-ignore lint/suspicious/noExplicitAny: required for Zod 3/4 dual compatibility
+type AnyZodSchema = z.ZodType<any>
+
 type StatusCodes =
   | 100 // Continue
   | 101 // Switching Protocols
@@ -66,23 +71,23 @@ type StatusCodes =
   | 510 // Not Extended
   | 511 // Network Authentication Required
 
-type TypedResponse<T extends Partial<Record<StatusCodes, z.ZodType>>> = T
+type TypedResponse<T extends Partial<Record<StatusCodes, AnyZodSchema>>> = T
 
 type BaseValidationSchema = {
-  body?: z.ZodType
-  headers?: z.ZodType
-  query?: z.ZodType
-  params?: z.ZodType
-  locals?: z.ZodType
+  body?: AnyZodSchema
+  headers?: AnyZodSchema
+  query?: AnyZodSchema
+  params?: AnyZodSchema
+  locals?: AnyZodSchema
 }
 
 export type SimpleResponseValidationSchema = BaseValidationSchema & {
-  response: z.ZodType
+  response: AnyZodSchema
   useResponse?: never
 }
 
 export type TypedResponseValidationSchema = BaseValidationSchema & {
-  useResponse: TypedResponse<Partial<Record<StatusCodes, z.ZodType>>>
+  useResponse: TypedResponse<Partial<Record<StatusCodes, AnyZodSchema>>>
   response?: never
 }
 
@@ -92,12 +97,12 @@ export type ValidationSchema =
   | TypedResponseValidationSchema
 
 type InferSchemaType<T extends ValidationSchema> = {
-  body: T['body'] extends z.ZodType ? z.infer<T['body']> : unknown
-  headers: T['headers'] extends z.ZodType ? z.infer<T['headers']> : unknown
-  query: T['query'] extends z.ZodType ? z.infer<T['query']> : unknown
-  params: T['params'] extends z.ZodType ? z.infer<T['params']> : unknown
+  body: T['body'] extends AnyZodSchema ? z.infer<T['body']> : unknown
+  headers: T['headers'] extends AnyZodSchema ? z.infer<T['headers']> : unknown
+  query: T['query'] extends AnyZodSchema ? z.infer<T['query']> : unknown
+  params: T['params'] extends AnyZodSchema ? z.infer<T['params']> : unknown
   response: T extends SimpleResponseValidationSchema ? z.infer<T['response']> : unknown
-  locals: T['locals'] extends z.ZodType ? z.infer<T['locals']> : Record<string, unknown>
+  locals: T['locals'] extends AnyZodSchema ? z.infer<T['locals']> : Record<string, unknown>
 }
 
 type ValidatedRequest<T extends ValidationSchema> = Request<
@@ -113,7 +118,7 @@ type TypedJsonResponse<
   Status extends StatusCodes,
 > = T extends TypedResponseValidationSchema
   ? Status extends keyof T['useResponse']
-    ? T['useResponse'][Status] extends z.ZodType
+    ? T['useResponse'][Status] extends AnyZodSchema
       ? z.infer<T['useResponse'][Status]>
       : never
     : never
@@ -210,7 +215,7 @@ export const validate = <T extends ValidationSchema>(
       if ('query' in schemas && schemas.query) {
         try {
           const result = schemas.query.parse(req.query)
-          req.query = result
+          Object.defineProperty(req, 'query', { value: result, writable: true, configurable: true })
         } catch (error) {
           if (error instanceof ZodError) {
             validationErrors.push(error)
@@ -247,7 +252,7 @@ export const validate = <T extends ValidationSchema>(
       }
 
       if (validationErrors.length > 0) {
-        const allErrors = validationErrors.flatMap((error) => error.errors)
+        const allErrors = validationErrors.flatMap((error) => error.issues)
         const errorResponse = { errors: allErrors }
         const baseRes = res as unknown as Response
         baseRes.status(400).json(errorResponse)
@@ -335,7 +340,7 @@ export const validate = <T extends ValidationSchema>(
       next()
     } catch (error) {
       if (error instanceof ZodError) {
-        const errorResponse = { errors: error.errors }
+        const errorResponse = { errors: error.issues }
         const baseRes = res as unknown as Response
         baseRes.status(400).json(errorResponse)
         return
@@ -351,7 +356,7 @@ export const validate = <T extends ValidationSchema>(
     const req = baseReq as ValidatedRequest<T>
     const res = baseRes as unknown as ValidatedResponse<T>
     return middleware(req, res, next)
-  }) as ValidatedMiddleware<T>
+  }) as unknown as ValidatedMiddleware<T>
 
   return Object.assign(wrappedMiddleware, {
     schemas,
