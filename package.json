@@ -1,6 +1,6 @@
 {
   "name": "echt",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "Lightweight, type-safe request validation middleware for Express using Zod",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
